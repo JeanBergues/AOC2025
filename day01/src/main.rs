@@ -28,7 +28,7 @@ fn main() {
 
         // Update the position and correct to lie on the safe
         dial_position += dir * distance;
-        dial_position = dial_position.rem_euclid(numbers_on_safe);
+        dial_position = dial_position.rem_euclid(numbers_on_safe); // Using rem_euclid because I want negative numbers to wrap to positive values
         if dial_position == 0 {
             count_zero_hits += 1;
         }
