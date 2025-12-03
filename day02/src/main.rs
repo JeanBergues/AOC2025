@@ -1,6 +1,6 @@
 use std::fs::read_to_string;
 
-fn invalid_ids_in_range(start: i64, stop: i64) -> i64 {
+fn invalid_ids_in_range(start: i64, stop: i64, even_split: bool) -> i64 {
     let mut total = 0;
     for i in start..=stop {
         let i_str = i.to_string();
@@ -8,7 +8,8 @@ fn invalid_ids_in_range(start: i64, stop: i64) -> i64 {
 
         // Loop over all possible sequence lengths, checking whether at least one repeats
         let mut invalid = false;
-        for divisor in 2..=len_str {
+        let max_divisor = if even_split { 2 } else { len_str };
+        for divisor in 2..=max_divisor {
             if len_str % divisor != 0 { continue }; // If you cannot split the number evenly, skip
 
             // Split the entire number into evenly sized chunks
@@ -21,6 +22,7 @@ fn invalid_ids_in_range(start: i64, stop: i64) -> i64 {
             // Only if all chunks are equal, the ID is invalid
             if i_chunks.iter().all(|chunk| chunk == &i_chunks[0]) {
                 invalid = true;
+                break;
             }
         }
         if invalid { total += i };
@@ -32,12 +34,22 @@ fn invalid_ids_in_range(start: i64, stop: i64) -> i64 {
 
 fn main() {
     let f = read_to_string("src/input.txt").unwrap();
-    let invalid_id_sum: i64 = f.split(",")
+    let invalid_id_sum_a: i64 = f.split(",")
         .map(|range| {
             let mut split_range = range.split("-");
             invalid_ids_in_range(split_range.next().unwrap().parse().expect("Is not a number"),
-                                 split_range.next().unwrap().parse().expect("Is not a number"))
+                                 split_range.next().unwrap().parse().expect("Is not a number"),
+                                 true)
         })
         .sum();
-    println!("Solution: {}", invalid_id_sum);
+    let invalid_id_sum_b: i64 = f.split(",")
+        .map(|range| {
+            let mut split_range = range.split("-");
+            invalid_ids_in_range(split_range.next().unwrap().parse().expect("Is not a number"),
+                                 split_range.next().unwrap().parse().expect("Is not a number"),
+                                 false)
+        })
+        .sum();
+    println!("Solution: {}", invalid_id_sum_a);
+    println!("Solution: {}", invalid_id_sum_b);
 }
