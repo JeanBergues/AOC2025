@@ -57,10 +57,10 @@ fn main() {
             }
         })
         .sum();
-    
+
     let end_oud = start_oud.elapsed();
     println!("Oud took {} microseconds.", end_oud.as_micros());
-    
+
     // Nieuwe versie, met minder collects
     let start_nieuw = Instant::now();
     operations.reverse(); // Need to reverse as vec only implements popping the last element
@@ -103,6 +103,6 @@ fn main() {
     let end_nieuw = start_nieuw.elapsed();
     println!("Nieuw took {} microseconds.", end_nieuw.as_micros());
     // OUD = ~2500 micros, NIEUW = ~1700 micros, significant sneller dus
-    
+
     println!("Solution to part B: {}", answer_b);
 }
