@@ -1,8 +1,10 @@
 use std::fs::read_to_string;
 use std::cmp::max;
+use std::time::Instant;
 
 fn main() {
     let f = read_to_string("src/input.txt").unwrap();
+    let start = Instant::now();
     let (fresh_id_ranges, ingredient_ids) = f.split_once("\n\n").unwrap();
 
     let mut ranges: Vec<_> = fresh_id_ranges.lines()
@@ -31,6 +33,8 @@ fn main() {
         highest_range_end = 1 + max(*range.end(), highest_range_end);
     }
 
+    let elapsed = start.elapsed();
     println!("Solution A: {}", n_fresh_ingredients);
     println!("Solution B: {}", n_fresh_ids);
+    println!("Took {} microseconds.", elapsed.as_micros());
 }
