@@ -22,7 +22,8 @@ fn main() {
         // Calculate if we pass 0 with the remaining rotation (after the full rotations are completed)
         let mod_move = dir * (distance % numbers_on_safe);
         if (dial_position + mod_move <= 0 || dial_position + mod_move > numbers_on_safe - 1)
-            && dial_position != 0 {
+            && dial_position != 0
+        {
             count_zero_passes += 1;
         }
 

@@ -40,7 +40,7 @@ fn trace_from(
 }
 
 fn main() {
-    let f = read_to_string("src/input.txt").unwrap();
+    let f = read_to_string("src/example.txt").unwrap();
 
     let start = Instant::now();
 
