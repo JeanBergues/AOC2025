@@ -104,24 +104,24 @@ fn main() {
 
     for rectangle in rectangles.iter() {
         let mut possible = true;
-        let (minx, maxx) = (
+        let (minx, maxx, miny, maxy) = (
             min(rectangle.0.x, rectangle.1.x),
             max(rectangle.0.x, rectangle.1.x),
-        );
-        let (miny, maxy) = (
             min(rectangle.0.y, rectangle.1.y),
             max(rectangle.0.y, rectangle.1.y),
         );
-        let h1 = Hline {
-            y: miny + 1,
-            xs: minx + 1,
-            xe: maxx - 1,
-        };
-        let h2 = Hline {
-            y: maxy - 1,
-            xs: minx + 1,
-            xe: maxx - 1,
-        };
+        let (h1, h2) = (
+            Hline {
+                y: miny + 1,
+                xs: minx + 1,
+                xe: maxx - 1,
+            },
+            Hline {
+                y: maxy - 1,
+                xs: minx + 1,
+                xe: maxx - 1,
+            },
+        );
         for v in vert_lines.iter() {
             if do_lines_cross(&h1, v) || do_lines_cross(&h2, v) {
                 possible = false;
@@ -132,16 +132,18 @@ fn main() {
             continue;
         };
 
-        let v1 = Vline {
-            x: minx + 1,
-            ys: miny + 1,
-            ye: maxy - 1,
-        };
-        let v2 = Vline {
-            x: maxx - 1,
-            ys: miny + 1,
-            ye: maxy - 1,
-        };
+        let (v1, v2) = (
+            Vline {
+                x: minx + 1,
+                ys: miny + 1,
+                ye: maxy - 1,
+            },
+            Vline {
+                x: maxx - 1,
+                ys: miny + 1,
+                ye: maxy - 1,
+            },
+        );
         for h in hor_lines.iter() {
             if do_lines_cross(h, &v1) || do_lines_cross(h, &v2) {
                 possible = false;
