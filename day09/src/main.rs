@@ -58,32 +58,23 @@ fn main() {
         .lines()
         .map(|line| RedTile::from_str(line).unwrap())
         .collect();
-
-    red_tiles.sort_by(|a, b| a.x.cmp(&b.x));
-    let mut vert_lines: Vec<Vline> = vec![];
-    for (i, w) in red_tiles.windows(2).enumerate() {
-        if i % 2 > 0 {
-            continue;
-        };
-        vert_lines.push(Vline {
-            x: w[0].x,
-            ys: min(w[0].y, w[1].y),
-            ye: max(w[0].y, w[1].y),
-        });
-    }
-    // println!("{:?}", vert_lines);
-
-    red_tiles.sort_by(|a, b| a.y.cmp(&b.y));
-    let mut hor_lines: Vec<Hline> = vec![];
-    for (i, w) in red_tiles.windows(2).enumerate() {
-        if i % 2 > 0 {
-            continue;
-        };
-        hor_lines.push(Hline {
-            y: w[0].y,
-            xs: min(w[0].x, w[1].x),
-            xe: max(w[0].x, w[1].x),
-        });
+    
+    let mut vert_lines: Vec<Vline> = vec!();
+    let mut hor_lines: Vec<Hline> = vec!();
+    for w in red_tiles.windows(2) {
+        if w[0].x == w[1].x {
+            vert_lines.push(Vline {
+                x: w[0].x,
+                ys: min(w[0].y, w[1].y),
+                ye: max(w[0].y, w[1].y),
+            })
+        } else if w[0].y == w[1].y {
+            hor_lines.push(Hline {
+                y: w[0].y,
+                xs: min(w[0].x, w[1].x),
+                xe: max(w[0].x, w[1].x),
+            });
+        }
     }
     // println!("{:?}", hor_lines);
 
