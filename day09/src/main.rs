@@ -54,11 +54,11 @@ fn main() {
 
     let start = Instant::now();
 
-    let mut red_tiles: Vec<RedTile> = f
+    let red_tiles: Vec<RedTile> = f
         .lines()
         .map(|line| RedTile::from_str(line).unwrap())
         .collect();
-    
+
     let mut vert_lines: Vec<Vline> = vec!();
     let mut hor_lines: Vec<Hline> = vec!();
     for w in red_tiles.windows(2) {
