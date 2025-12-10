@@ -2,17 +2,17 @@ use std::fs::read_to_string;
 
 fn main() {
     let numbers_on_safe = 100;
-    let f = read_to_string("src/input.txt").unwrap();
+    let f = read_to_string("src/example.txt").unwrap();
 
     let mut dial_position = 50;
     let mut count_zero_hits = 0;
     let mut count_zero_passes = 0;
 
     for line in f.lines() {
-        let dir = match line.chars().nth(0).unwrap() {
-            'L' => -1,
-            'R' => 1,
-            _ => 0,
+        let dir = if line.chars().nth(0).unwrap() == 'L' {
+            -1
+        } else {
+            1
         };
         let distance: i32 = line[1..].parse().unwrap();
 
@@ -28,8 +28,8 @@ fn main() {
         }
 
         // Update the position and correct to lie on the safe
-        dial_position += dir * distance;
-        dial_position = dial_position.rem_euclid(numbers_on_safe); // Using rem_euclid because I want negative numbers to wrap to positive values
+        // Using rem_euclid because I want negative numbers to wrap to positive values
+        dial_position = (dial_position + mod_move).rem_euclid(numbers_on_safe);
         if dial_position == 0 {
             count_zero_hits += 1;
         }
