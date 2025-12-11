@@ -1,20 +1,35 @@
 use std::fs::read_to_string;
-use std::i8::MAX;
+use std::time::Instant;
+
 
 fn button_xor(b1: &Vec<bool>, b2: &Vec<bool>) -> Vec<bool> {
     b1.iter().zip(b2).map(|(x1, x2)| x1 ^ x2).collect()
 }
 
-fn find_least_presses(goal: &Vec<bool>, buttons: &Vec<Vec<bool>>, start: Vec<bool>, depth: i64) -> i64 {
-    if depth 
-    if *goal == start { return 0 };
-    for b in buttons
+fn find_least_presses(
+    goal: &Vec<bool>,
+    buttons: &Vec<Vec<bool>>,
+    state: Vec<bool>,
+    from: usize,
+    pressed: i32,
+) -> i32 {
+    if *goal == state {
+        return pressed;
+    };
+    buttons[from..]
+        .iter()
+        .enumerate()
+        .map(|(i, b)| find_least_presses(goal, buttons, button_xor(&state, b), from + i + 1, pressed + 1))
+        .min()
+        .unwrap_or(i32::MAX)
 }
 
 fn main() {
-    let f = read_to_string("src/example.txt").unwrap();
+    let f = read_to_string("src/input.txt").unwrap();
+    let start = Instant::now();
+
+    let mut answer_a = 0;
     for problem in f.lines() {
-        println!("{:?}", problem);
         let mut goal_state: Vec<bool> = vec![];
         let mut buttons: Vec<Vec<bool>> = vec![];
         let mut joltages: Vec<i64> = vec![];
@@ -38,8 +53,10 @@ fn main() {
                 buttons.push(new_button);
             }
         }
-        let mut answer_a = i64::MAX;
-        println!("{:?}", goal_state);
-        println!("{:?}", buttons);
+        answer_a += find_least_presses(&goal_state, &buttons, vec![false; goal_state.len()], 0, 0);
     }
+
+    let end = start.elapsed();
+    println!("Solution A: {}", answer_a);
+    println!("Time taken: {} micros", end.as_micros());
 }
