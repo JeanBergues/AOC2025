@@ -1,26 +1,13 @@
 use std::fs::read_to_string;
 use std::time::Instant;
-use std::collections::HashMap;
+use good_lp::variable::ProblemVariables;
+use good_lp::{
+    constraint, default_solver, variable, variables, Constraint, Expression, Solution, SolverModel,
+    Variable,
+};
 
 fn button_xor(b1: &Vec<bool>, b2: &Vec<bool>) -> Vec<bool> {
     b1.iter().zip(b2).map(|(x1, x2)| x1 ^ x2).collect()
-}
-
-fn button_sub(b1: &Vec<u8>, b2: &Vec<u8>, ntimes: u8) -> Vec<u8> {
-    b1.iter().zip(b2).map(|(x1, x2)| x1 - x2 * ntimes).collect()
-}
-
-fn most_important_button(buttons: &Vec<Vec<u8>>, button: &Vec<u8>) -> usize {
-    let mut res = usize::MAX;
-    for (i, v) in button.iter().enumerate() {
-        if *v == 0 {continue}
-        let mut total = 0;
-        for b in buttons {
-            if b[i] == 1 { total += 1 }
-        }
-        if total < res { res = total }
-    }
-    res
 }
 
 fn find_least_presses(
@@ -49,105 +36,110 @@ fn find_least_presses(
         .unwrap_or(i32::MAX)
 }
 
-fn find_least_joltage_presses_memo(buttons: &Vec<Vec<u8>>, state: Vec<u8>, i: usize, memo: &mut HashMap<(Vec<u8>, usize), Option<i32>>) -> Option<i32> {
-    match memo.get(&(state.clone(), i)) {
-        Some(v) => {return *v},
-        None => {}
-    }
-    let mut res: Option<i32> = None;
-    let mut times = *(state
-        .iter()
-        .enumerate()
-        .filter(|(j, _)| buttons[i][*j] > 0)
-        .map(|(_, v)| v)
-        .min()
-        .unwrap());
-    let mut clone = button_sub(&state, &buttons[i], times);
-    if clone.iter().map(|x| *x as u32).sum::<u32>() == 0 {
-        res = Some(times as i32);
-    } else if i == buttons.len() - 1 {
-        res = None;
-    } else {
-        while times > 0 {
-            match find_least_joltage_presses_memo(buttons, clone.clone(), i + 1, memo) {
-                // Slecht voor performance, al dat clonen
-                Some(v) => {
-                    // println!("Gelukt - {:?}, b={:?}, t={}", clone, buttons[i], times);
-                    res = Some(times as i32 + v);
-                    memo.insert((state, i), res);
-                    return res;
-                }
-                None => {
-                    // println!("Oeps - {:?}, b={:?}, t={}", state, buttons[i], times);
-                    let mut early_return = true;
-                    for (j, v) in buttons[i].iter().enumerate() {
-                        if *v == 0 { continue }
-                        for b in buttons[(i+1)..].iter() {
-                            if b[j] == 1 { early_return = false; break }
-                        }
-                        if !early_return { break }
-                    }
-                    if early_return { return None }
-                    times -= 1;
-                    clone = button_sub(&state, &buttons[i], times)
-                }
-            }
-        }
-        match find_least_joltage_presses_memo(buttons, clone.clone(), i + 1, memo) {
-            // Slecht voor performance, al dat clonen
-            Some(v) => {
-                // println!("Gelukt - {:?}, b={:?}, t={}", clone, buttons[i], times);
-                res = Some(times as i32 + v);
-            }
-            None => {
-                // println!("Oeps - {:?}, b={:?}, t={}", state, buttons[i], times);
-                res = None;
-            }
-        }
-    };
-    memo.insert((state, i), res);
-    res
+// GOOD_LP DEFINITION STRUCTS
+struct ButtonProblem {
+    buttons: ProblemVariables,
+    pressed: Expression,
+    machine: JoltageMachine,
 }
 
-fn find_least_joltage_presses(buttons: &Vec<Vec<u8>>, state: Vec<u8>, i: usize) -> Option<i32> {
-    let mut times = *(state
-        .iter()
-        .enumerate()
-        .filter(|(j, _)| buttons[i][*j] > 0)
-        .map(|(_, v)| v)
-        .min()
-        .unwrap());
-    let mut clone = button_sub(&state, &buttons[i], times);
-    if clone.iter().map(|x| *x as u32).sum::<u32>() == 0 {
-        Some(times as i32)
-    } else if i == buttons.len() - 1 {
-        None
-    } else {
-        while times > 0 {
-            match find_least_joltage_presses(buttons, clone.clone(), i + 1) {
-                // Slecht voor performance, al dat clonen
-                Some(v) => {
-                    // println!("Gelukt - {:?}, b={:?}, t={}", clone, buttons[i], times);
-                    return Some(times as i32 + v);
-                }
-                None => {
-                    // println!("Oeps - {:?}, b={:?}, t={}", state, buttons[i], times);
-                    times -= 1;
-                    clone = button_sub(&state, &buttons[i], times)
-                }
-            }
+struct Button {
+    b0: u8,
+    b1: u8,
+    b2: u8,
+    b3: u8,
+    b4: u8,
+    b5: u8,
+    b6: u8,
+    b7: u8,
+    b8: u8,
+    b9: u8,
+}
+
+impl Button {
+    fn from_vec(v: &Vec<bool>) -> Button {
+        assert_eq!(v.len(), 10);
+        Button {
+            b0: if v[0] {1} else {0},
+            b1: if v[1] {1} else {0},
+            b2: if v[2] {1} else {0},
+            b3: if v[3] {1} else {0},
+            b4: if v[4] {1} else {0},
+            b5: if v[5] {1} else {0},
+            b6: if v[6] {1} else {0},
+            b7: if v[7] {1} else {0},
+            b8: if v[8] {1} else {0},
+            b9: if v[9] {1} else {0},
         }
-        match find_least_joltage_presses(buttons, clone.clone(), i + 1) {
-            // Slecht voor performance, al dat clonen
-            Some(v) => {
-                // println!("Gelukt - {:?}, b={:?}, t={}", clone, buttons[i], times);
-                Some(times as i32 + v)
-            }
-            None => {
-                // println!("Oeps - {:?}, b={:?}, t={}", state, buttons[i], times);
-                None
-            }
+    }
+}
+
+struct Joltage {
+    joltage_goal: u16,
+    joltage_value: Expression
+}
+
+struct JoltageMachine {
+    j0: Joltage,
+    j1: Joltage,
+    j2: Joltage,
+    j3: Joltage,
+    j4: Joltage,
+    j5: Joltage,
+    j6: Joltage,
+    j7: Joltage,
+    j8: Joltage,
+    j9: Joltage,
+}
+
+impl ButtonProblem {
+    fn new(goal: Vec<u16>) -> ButtonProblem {
+        assert_eq!(goal.len(), 10);
+        ButtonProblem {
+            buttons: variables!(),
+            pressed: 0.into(),
+            machine: JoltageMachine {
+                j0: Joltage {joltage_goal: goal[0], joltage_value: 0.into()},
+                j1: Joltage {joltage_goal: goal[1], joltage_value: 0.into()},
+                j2: Joltage {joltage_goal: goal[2], joltage_value: 0.into()},
+                j3: Joltage {joltage_goal: goal[3], joltage_value: 0.into()},
+                j4: Joltage {joltage_goal: goal[4], joltage_value: 0.into()},
+                j5: Joltage {joltage_goal: goal[5], joltage_value: 0.into()},
+                j6: Joltage {joltage_goal: goal[6], joltage_value: 0.into()},
+                j7: Joltage {joltage_goal: goal[7], joltage_value: 0.into()},
+                j8: Joltage {joltage_goal: goal[8], joltage_value: 0.into()},
+                j9: Joltage {joltage_goal: goal[9], joltage_value: 0.into()},
+            },
         }
+    }
+
+    fn add(&mut self, button: Button) -> Variable {
+        let times_to_press = self.buttons.add(variable().min(0).integer());
+        self.pressed += times_to_press;
+        self.machine.j0.joltage_value += times_to_press * button.b0;
+        self.machine.j1.joltage_value += times_to_press * button.b1;
+        self.machine.j2.joltage_value += times_to_press * button.b2;
+        self.machine.j3.joltage_value += times_to_press * button.b3;
+        self.machine.j4.joltage_value += times_to_press * button.b4;
+        self.machine.j5.joltage_value += times_to_press * button.b5;
+        self.machine.j6.joltage_value += times_to_press * button.b6;
+        self.machine.j7.joltage_value += times_to_press * button.b7;
+        self.machine.j8.joltage_value += times_to_press * button.b8;
+        self.machine.j9.joltage_value += times_to_press * button.b9;
+        times_to_press
+    }
+
+    fn constraints(m: JoltageMachine) -> Vec<Constraint> {
+        let mut constraints = Vec::with_capacity(10);
+        for c in [m.j0, m.j1, m.j2, m.j3, m.j4, m.j5, m.j6, m.j7, m.j8, m.j9] {
+            constraints.push(constraint!(c.joltage_value == c.joltage_goal));
+        }
+        constraints
+    }
+
+    fn least_needed_presses(self) -> impl Solution {
+        let objective = self.pressed;
+        self.buttons.minimise(objective).using(default_solver).with_all(Self::constraints(self.machine)).solve().unwrap()
     }
 }
 
@@ -160,45 +152,39 @@ fn main() {
     for problem in f.lines() {
         let mut goal_state: Vec<bool> = vec![];
         let mut buttons: Vec<Vec<bool>> = vec![];
-        let mut nbuttons: Vec<Vec<u8>> = vec![];
-        let mut joltages: Vec<u8> = vec![];
+        let mut joltages: Vec<u16> = vec![0; 10];
 
         for (i, s) in problem.split(" ").enumerate() {
             if i == 0 {
                 goal_state = s[1..s.len() - 1].chars().map(|c| c == '#').collect()
             } else if i == problem.split(" ").count() - 1 {
-                joltages = s[1..s.len() - 1]
+                for j in s[1..s.len() - 1]
                     .split(",")
-                    .map(|c| c.parse().unwrap())
-                    .collect();
+                    .enumerate()
+                    .map(|(i, c)| (i, c.parse::<u16>().unwrap()))
+                {
+                    joltages[j.0] = j.1;
+                }
             } else {
-                let mut new_button: Vec<bool> = vec![false; goal_state.len()];
-                let mut new_nbutton: Vec<u8> = vec![0; goal_state.len()];
+                let mut new_button: Vec<bool> = vec![false; 10];
                 for b in s[1..s.len() - 1]
                     .split(",")
                     .map(|c| c.parse::<usize>().unwrap())
                 {
                     new_button[b] = true;
-                    new_nbutton[b] = 1;
                 }
                 buttons.push(new_button);
-                nbuttons.push(new_nbutton);
             }
         }
         answer_a += find_least_presses(&goal_state, &buttons, vec![false; goal_state.len()], 0, 0);
-        let mut sorted_nbuttons = nbuttons.clone();
-        //sorted_nbuttons.sort_by(|a, b| most_important_button(&nbuttons, &a).cmp(&most_important_button(&nbuttons, &b)));
-        sorted_nbuttons.sort_by(|a, b| b.iter().sum::<u8>().cmp(&a.iter().sum::<u8>()));
-        println!("{:?}", sorted_nbuttons);
-        println!("{:?}", problem);
-        // println!("{:?}", joltages);
-        // println!("{:?}", nbuttons);
 
-        let mut memo: HashMap<(Vec<u8>, usize), Option<i32>> = HashMap::new();
-        //let temp_total = find_least_joltage_presses(&sorted_nbuttons, joltages, 0).unwrap();
-        let temp_total = find_least_joltage_presses_memo(&sorted_nbuttons, joltages, 0, &mut memo).unwrap();
-        answer_b += temp_total;
-        println!("Least presses: {}", temp_total)
+        let mut pb = ButtonProblem::new(joltages);
+        let variables: Vec<_> = buttons.iter().map(|b| pb.add(Button::from_vec(b))).collect();
+        let solution = pb.least_needed_presses();
+        let presses_per_button: Vec<i32> = variables.iter().map(|&v| solution.value(v).round() as i32).collect();
+        println!("{}", problem);
+        println!("{:?}", presses_per_button);
+        answer_b += presses_per_button.iter().sum::<i32>();
     }
 
     let end = start.elapsed();
