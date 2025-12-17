@@ -23,8 +23,12 @@ fn main() {
 
     let mut paths_memo: HashMap<(String, String), i64> = HashMap::new();
     let answer_a = paths_from("you", "out", &connections, &mut paths_memo);
-    let fft_dac_paths = paths_from("svr", "fft", &connections, &mut paths_memo) * paths_from("fft", "dac", &connections, &mut paths_memo) * paths_from("dac", "out", &connections, &mut paths_memo);
-    let dac_fft_paths = paths_from("svr", "dac", &connections, &mut paths_memo) * paths_from("dac", "fft", &connections, &mut paths_memo) * paths_from("fft", "out", &connections, &mut paths_memo);
+    let fft_dac_paths = paths_from("svr", "fft", &connections, &mut paths_memo)
+        * paths_from("fft", "dac", &connections, &mut paths_memo)
+        * paths_from("dac", "out", &connections, &mut paths_memo);
+    let dac_fft_paths = paths_from("svr", "dac", &connections, &mut paths_memo)
+        * paths_from("dac", "fft", &connections, &mut paths_memo)
+        * paths_from("fft", "out", &connections, &mut paths_memo);
     let answer_b = fft_dac_paths + dac_fft_paths;
 
     let end_time = start_time.elapsed();
