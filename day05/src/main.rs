@@ -5,7 +5,7 @@ use std::time::Instant;
 fn main() {
     let f = read_to_string("src/input.txt").unwrap();
     let start = Instant::now();
-    let (fresh_id_ranges, ingredient_ids) = f.split_once("\n\n").unwrap();
+    let (fresh_id_ranges, ingredient_ids) = f.split_once("\r\n\r\n").unwrap();
 
     let mut ranges: Vec<_> = fresh_id_ranges.lines()
         .map(|range| {
@@ -23,6 +23,7 @@ fn main() {
             is_fresh
         }).filter(|b| *b).count();
 
+
     ranges.sort_by(|a, b| a.start().cmp(b.start()));
 
     let mut n_fresh_ids: i64 = 0;
@@ -30,7 +31,7 @@ fn main() {
     for range in ranges.iter() {
         if range.end() < &highest_range_end { continue };
         n_fresh_ids += 1 + range.end() - max(range.start(), &highest_range_end);
-        highest_range_end = 1 + max(*range.end(), highest_range_end);
+        highest_range_end = *range.end() + 1;
     }
 
     let elapsed = start.elapsed();
